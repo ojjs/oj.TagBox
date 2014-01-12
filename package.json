@@ -1,0 +1,20 @@
+{
+  "name": "oj-tag-box",
+  "version": "0.0.1",
+  "main": "oj.TagBox.js",
+  "description": "An OJ plugin to edit Tags in a TextBox",
+  "homepage": "http://ojjs.org/plugins.html#TagBox",
+  "keywords": [
+    "oj",
+    "plugin",
+    "tag",
+    "box",
+    "completion",
+    "autocomplete"
+  ],
+  "author": "Evan Moran <evan@evanmoran.com>",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/ojjs/oj.TagBox.git"
+  }
+}

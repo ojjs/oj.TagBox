@@ -1,0 +1,25 @@
+{
+  "name": "oj-tagbox",
+  "version": "0.0.1",
+  "main": "oj.TagBox.js",
+  "homepage": "http://ojjs.org/plugins.html#TagBox",
+  "authors": [
+    "Evan Moran <evan@evanmoran.com>"
+  ],
+  "description": "TagBox plugin for OJ",
+  "keywords": [
+    "oj",
+    "plugin",
+    "tag",
+    "box"
+  ],
+  "license": "MIT",
+  "ignore": [
+    ".DS_Store",
+    ".git",
+    ".gitignore",
+    "bower_components",
+    "package.json",
+    "node_modules"
+  ]
+}
