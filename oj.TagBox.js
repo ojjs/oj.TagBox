@@ -13,6 +13,16 @@
     if (typeof settings !== 'object')
       settings = {}
 
+    function measureWidth(text, font){
+      var f = font || '12px arial',
+          o = $('<div>' + text + '</div>')
+                .css({position: 'absolute', float: 'left', 'white-space': 'nowrap', visibility:'hidden', 'font': f})
+                .appendTo($('body')),
+          w = o.width()
+      o.remove()
+      return w
+    }
+
     var Tag = oj.createType('Tag', {
       base: oj.ModelView,
       constructor: function(){
@@ -26,6 +36,7 @@
         this.backspaced = oj.argumentShift(u.options, 'backspaced') || function(){}
         this.created = oj.argumentShift(u.options, 'created') || function(){}
         this.searched = oj.argumentShift(u.options, 'searched') || function(){}
+        this._typeaheadOptions = oj.argumentShift(u.options, 'typeaheadOptions') || {}
 
         this.el = oj(function(){
           oj.div(function(){
@@ -50,8 +61,11 @@
                     _t.edit = false
                     _t.triggerCreated()
                   }
-
                 }
+                // On all key changes resize the input box to the size of the text plus the size of the X
+
+                var newWidth = measureWidth(_t._input.value, _t._input.$el.css('font')) + _t._x.$el.outerWidth() + 5
+                _t._input.$el.width(newWidth)
               },
               change:function(){
                 // Remember previous value to detect backspaced event
@@ -87,6 +101,7 @@
             this._input.value = v
           }
         },
+        typeaheadOptions: {get:function(){return this._typeaheadOptions} },
         created:function(){},
         deleted:function(){},
         backspaced:function(){},
@@ -134,9 +149,10 @@
         display:'none',
         fontSize:sharedFontSize,
         fontFamily:sharedFontFamily,
-        border:'1px solid red',
+        border:'none',
         outline:'none',
-        padding:sharedPadding
+        padding:sharedPadding,
+        width: '20px'
 
       },
       '> .oj-Tag-label':{
@@ -166,7 +182,7 @@
 
     var TagBox = oj.createType('TagBox', {
 
-      base: oj.CollectionView,
+      base: oj.ModelKeyView,
 
       // TagBox(tag1, tag2, tag3, properties)
       constructor: function(){
@@ -179,27 +195,32 @@
         if(args.length > 0)
           this.video = args[0];
 
-        var tags = oj.argumentShift(options, 'tags') || []
+        var tags = oj.argumentShift(options, 'tags') || args
+
+        // Writeonce properties
+        this._typeaheadOptions = oj.argumentShift(options, 'typeaheadOptions')
 
         // The element is a list of Tag views.
         this.el = oj(function(){
           _t._tags = oj.List({
-            // Select the last input on click
+            // Bind: Click anywhere to select the last input
             click:function(){
               _t._selectInput()
             }
           });
         });
 
-        TagBox.base.constructor.apply(this, [options]);
+        var out = TagBox.base.constructor.apply(this, [options]);
 
         // .value: an array of strings (same as .tags)
-        this.tags = args.length > 0 ? args : tags;
+        this.tags = tags;
+        return out;
       },
       properties: {
         tags: {
           get: function(){
-            return this._tags.items;
+            var items = this._tags.items.map(function(item){return item.value});
+            return items.slice(0,items.length-1)
           },
           set: function(v){
             if(!oj.isArray(v))
@@ -225,6 +246,9 @@
         count: {
           get: function(){ return this._tags.count }
         },
+        typeaheadOptions: {
+          get: function(){ return this._typeaheadOptions }
+        },
         "$inputs": {
           get: function(){ return this.$('.oj-TagBox-input') }
         },
@@ -237,6 +261,8 @@
         "$box":{
           get: function(){ return this.$el }
         }
+
+
       },
       methods: {
         // add: function(tagData){
@@ -254,13 +280,11 @@
         },
         // Event: tagCreated was fired
         _tagCreated: function(){
-          console.log("tagCreated");
           this._addInputTag()
           this._selectInput()
         },
         // Event: tagDeleted was fired
         _tagDeleted: function(){
-          console.log("tagDeleted");
         },
         // Event: tagBackspaced was fired
         _tagBackspaced: function(){
@@ -270,13 +294,16 @@
         },
         // Add a tag with event bindings
         _addTag: function(tag, options){
+          if(typeof options == 'undefined')
+            options = {}
+          options.typeaheadOptions = this.typeaheadOptions
           var _t = this;
           events = {
             created:function(){_t._tagCreated.apply(_t, arguments)},
             deleted:function(){_t._tagDeleted.apply(_t, arguments)},
             backspaced:function(){_t._tagBackspaced.apply(_t, arguments)}
           };
-          _t._tags.add(new Tag(tag, events, options))
+          _t._tags.add(new TagBox.Tag(tag, events, options))
         },
         // Add an input tag at the end
         _addInputTag: function(tag){
@@ -301,6 +328,7 @@
     TagBox.css({
       '':{
         display:'block',
+        cursor:'text',
         position:'relative',
         backgroundColor:'white',
         border:'1px solid #c6c6c6',
